@@ -1,0 +1,24 @@
+{
+    "recommendations": [
+        "formulahendry.auto-close-tag",
+        "formulahendry.auto-rename-tag",
+        "aaron-bond.better-comments",
+        "CoenraadS.bracket-pair-colorizer-2",
+        "EditorConfig.editorconfig",
+        "donjayamanne.githistory",
+        "rintoj.json-organizer",
+        "PKief.material-icon-theme",
+        "christian-kohler.path-intellisense",
+        "esbenp.prettier-vscode",
+        "richie5um2.vscode-sort-json",
+        "joelday.docthis",
+        "DavidAnson.vscode-markdownlint",
+        "ms-vscode.typescript-javascript-grammar",
+        "DotJoshJohnson.xml",
+        "dsznajder.es7-react-js-snippets",
+        "xabikos.javascriptsnippets",
+        "wix.vscode-import-cost",
+        "nucllear.vscode-extension-auto-import",
+        "clinyong.vscode-css-modules"
+    ]
+}
