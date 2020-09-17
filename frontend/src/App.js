@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-import { Button, Form, Grid, Header, List, Radio, Select } from 'semantic-ui-react';
+import { Button, Form, Grid, Header, List, Radio, Segment, Select } from 'semantic-ui-react';
 import './App.css';
 import { If } from './components/Index';
 
@@ -23,6 +23,8 @@ class App extends Component {
     wordList: [],
     listaPessoal: []
   };
+
+  lista = [];
   //checkboxIsChecked;
 
   handleChangeRadio = ( e, { value } ) => {
@@ -37,14 +39,18 @@ class App extends Component {
     this.setState( { tonicidade: value } );
   };
 
-  handleSubmit = async () => {
-    const listaRecebida = await this.buscaLista();
-    //console.log( listaRecebida );
-    this.setState( { wordList: listaRecebida.data } );
-    console.log( this.state.wordList );
-
-    //console.log( "Canonicidade: " + this.state.isCanonica );
-    //console.log( "Tonicidade: " + this.state.tonicidade );
+  handleSubmit = async ( tonicidade, isCanonica ) => {
+    if ( tonicidade && isCanonica != null ) {
+      // const listaRecebida = await this.buscaLista();
+      const listaRecebida = await this.buscaListaPorCaracteristicas( tonicidade, isCanonica );
+      //console.log( listaRecebida );
+      this.setState( { wordList: listaRecebida.data } );
+      // this.setState( { isCanonica } );
+      console.log( this.state.wordList );
+    }
+    else {
+      console.log( "sem informaçoes" );
+    }
   };
 
   buscaLista = async () => {
@@ -57,28 +63,48 @@ class App extends Component {
     }
   };
 
+  buscaListaPorCaracteristicas = async ( tonicidade, isCanonica ) => {
+    try {
+      return await axios.get( Api.url + Api.buscar30PorCaracteristicas( tonicidade, isCanonica ) );
+    } catch ( err ) {
+      const error = 'Erro -> buscaListaPorCaracteristicas; Erro: ' + err;
+      console.log( error );
+      throw err;
+    }
+
+  };
+
   inserePalavra = async () => {
     const palavra1 = {
-      "nome": "Manga",
+      "nome": "Morango",
       "canonica": false,
       "tonicidade": "paroxitona"
     }
     await axios.post( Api.url + Api.listaPalavras, palavra1 );
-  }
+  };
 
   adicionaPalavraListaPessoal = ( nome ) => {
-    this.state.listaPessoal.push( nome );
-    console.log( "lista pessoal: " + this.state.listaPessoal );
+    if ( !this.lista.includes( nome ) ) {
+      this.lista.push( nome );
+      // this.state.listaPessoal.push( nome );
+      this.setState( { listaPessoal: this.lista } );
+      console.log( "lista pessoal: " + this.state.listaPessoal );
+    }
+  };
+
+  excluiPalavraListaPessoal = ( id ) => {
+    this.lista.splice( id, 1 );
+    this.setState( { listaPessoal: this.lista } );
   }
 
   render () {
-    const { isCanonica, wordList, listaPessoal } = this.state;
+    const { isCanonica, wordList, listaPessoal, tonicidade } = this.state;
     return (
       <Grid padded>
         <Grid.Row>
           <Grid.Column width={ 4 } />
           <Grid.Column width={ 8 }>
-            <Form onSubmit={ this.handleSubmit }>
+            <Form onSubmit={ () => this.handleSubmit( tonicidade, isCanonica ) }>
               <Form.Field
                 control={ Select }
                 options={ opcoes }
@@ -104,32 +130,48 @@ class App extends Component {
               </Form.Group>
               <Form.Field control={ Button } >Buscar</Form.Field>
             </Form>
-            <List>
+            <If condition={ wordList[ 0 ] }>
               <Header as='h2'>Lista de Palavras:</Header>
-              { wordList.map( ( word, index ) => (
-                <div key={ index }>
-                  <List horizontal>
-                    <List.Item>{ word.nome }</List.Item>
-                    <Button onChange={ this.adicionaPalavraListaPessoal( word.nome ) }>Adicionar Palavra</Button>
-                  </List>
-                </div>
-              ) ) }
-            </List>
-            <List>
+            </If>
+            { wordList.map( ( word, index ) => (
+              <div key={ index }>
+                <Grid centered columns='2'>
+                  <Grid.Row >
+                    <Grid.Column textAlign='center' verticalAlign='middle'>
+                      <Header as='h4'>
+                        { word.nome }
+                      </Header>
+                    </Grid.Column>
+                    <Grid.Column textAlign='center'>
+                      <Button onClick={ () => this.adicionaPalavraListaPessoal( word.nome ) }>Adicionar Palavra</Button>
+                    </Grid.Column>
+                  </Grid.Row>
+                </Grid>
+              </div>
+            ) ) }
+            <If condition={ listaPessoal[ 0 ] }>
               <Header as='h2'>Lista Pessoal:</Header>
-              { listaPessoal.map( ( word, index ) => (
-                <div key={ index }>
-                  <List horizontal>
-                    <List.Item>{ word }</List.Item>
-                    <Button>Excluir Palavra</Button>
-                  </List>
-                </div>
-              ) ) }
-            </List>
+            </If>
+            { listaPessoal.map( ( word, index ) => (
+              <div key={ index }>
+                <Grid centered columns='2'>
+                  <Grid.Row >
+                    <Grid.Column textAlign='center' verticalAlign='middle'>
+                      <Header as='h4'>
+                        { word }
+                      </Header>
+                    </Grid.Column>
+                    <Grid.Column textAlign='center'>
+                      <Button onClick={ () => this.excluiPalavraListaPessoal( index ) }>Excluir Palavra</Button>
+                    </Grid.Column>
+                  </Grid.Row>
+                </Grid>
+              </div>
+            ) ) }
           </Grid.Column>
           <Grid.Column width={ 4 } />
         </Grid.Row>
-      </Grid>
+      </Grid >
     );
   }
 }

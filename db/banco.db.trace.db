@@ -1,0 +1,6 @@
+2020-09-17 00:44:55 jdbc[163]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "DELETE *[*] FROM PALAVRA"; expected "identifier"; SQL statement:
+DELETE * FROM PALAVRA [42001-200]
+2020-09-17 00:45:13 jdbc[163]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "DROP PALAVRA[*]"; expected "TABLE, INDEX, USER, SEQUENCE, CONSTANT, TRIGGER, VIEW, ROLE, ALIAS, SCHEMA, ALL, DOMAIN, TYPE, DATATYPE, AGGREGATE, SYNONYM"; SQL statement:
+DROP PALAVRA [42001-200]
