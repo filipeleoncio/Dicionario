@@ -17,8 +17,8 @@ const consCons = [
   'mp', 'mb',                                                             //contem m
   'st', 'rt', 'nt', 'lt',                                                 //termina com t
   'sm', 'lm',                                                             //termina com m
-  'pn', 'ps', 'dv', 'ft', 'gn', 'bj', 'nc',                               //outros
-  'ng', 'nq'
+  'pn', 'ps', 'dv', 'ft', 'gn', 'bj',                                     //outros
+  'nd', 'nc', 'ng', 'ngu', 'nqu'
 ]
 
 const consConsI = [ 'br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr',
@@ -27,7 +27,12 @@ const consConsI = [ 'br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr',
   'ps', 'pn', 'gn'
 ]
 
-const vogalVogal = [];
+const vogalVogal = [ 'ae', "ai", "ao", "au",
+  'ea', 'ei', 'eo', 'eu',
+  'ia', 'ie', 'io', 'iu',
+  'oa', 'oe', 'oi', 'ou',
+  'ua', 'ue', 'ui', 'uo'
+];
 
 const vogalVogalI = [];
 
@@ -133,10 +138,10 @@ class App extends Component {
   gerarPseudoPalavras = async () => {
     let listaDePseudo = [];
     this.state.listaPessoal.map( ( word ) => console.log( word.nome, word.isCanonica ) );
-
+    var i;
     this.state.listaPessoal.forEach( ( word ) => {
       if ( word.isCanonica ) {
-        for ( var i = 0; i < 4; i++ ) {
+        for ( i = 0; i < 4; i++ ) {
           const numSilabas = word.nome.length / 2;
 
           const silabaTrocada = Math.floor( Math.random() * numSilabas ); //silaba aleatoria
@@ -150,19 +155,166 @@ class App extends Component {
           var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
 
           novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade );
-
           listaDePseudo.push( novaPalavra );
+
+          console.log( "palavra adicionada a lista", novaPalavra );
+          console.log( "Lista atual:", listaDePseudo );
         }
+
       }
       else {
-        for ( i = 0; i < 4; i++ ) {
+        let partes = [];
+        var parte = {
+          letras: [],
+          isVogal: Boolean,
+          indiceInicio: null
+        };
+        var nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" );
+        console.log( "com acentos:", word.nome );
+        console.log( "sem acentos:", nomeSemAcentos );
+        var isVogal;
 
+        if ( vogais.find( ( v ) => v === nomeSemAcentos.charAt( 0 ).toLowerCase() ) ) {
+          isVogal = true;
+          parte.letras.push( nomeSemAcentos.charAt( 0 ) );
+          parte.isVogal = isVogal;
+          parte.indiceInicio = 0;
+          console.log( "primeira letra eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
+        }
+        else {
+          isVogal = false;
+          parte.letras.push( nomeSemAcentos.charAt( 0 ) );
+          parte.isVogal = isVogal;
+          parte.indiceInicio = 0;
+          console.log( "primeira letra nao eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
+        }
+
+        for ( let t = 1; t < nomeSemAcentos.length; t++ ) {
+          var isVogalLocal;
+          if ( vogais.find( ( v ) => v === nomeSemAcentos.charAt( t ) ) ) {
+            isVogalLocal = true;
+          }
+          else {
+            isVogalLocal = false;
+          }
+
+          console.log( "letra ", nomeSemAcentos.charAt( t ), "vogal", isVogalLocal );
+
+          if ( isVogal === isVogalLocal ) {
+            parte.letras.push( nomeSemAcentos.charAt( t ) ); //Se achar 'Q' seguido de 'U', ou 'G' seguido de 'U', puxar os 2 como se fossem consoantes, pois sao um unico fonema
+          }
+          else {
+            isVogal = !isVogal;
+            partes.push( parte );
+            parte = {
+              letras: [],
+              isVogal: Boolean,
+              indiceInicio: null
+            };
+            parte.letras.push( nomeSemAcentos.charAt( t ) );
+            parte.isVogal = isVogal;
+            parte.indiceInicio = t;
+          }
+        }
+        partes.push( parte );
+
+        var trocas;
+        for ( i = 0; i < 4; i++ ) {
+          novaPalavra = [];
+          trocas = [];
+          for ( var j = 0; j < partes.length; j++ )
+            trocas.push( j );
+          console.log( partes );
+          console.log( trocas );
+
+          this.shuffleArray( trocas );
+          console.log( trocas );
+
+          trocas.splice( Math.floor( trocas.length ) / 2 );
+          // var trocasReduzidas = trocas.slice( 0, Math.floor( trocas.length ) / 2 );
+
+          console.log( trocas );
+
+          // partes.forEach( ( parte ) => novaPalavra.push( parte.letras.join( "" ) ) );
+          // partes.map( ( parte ) => novaPalavra.push( parte.letras.join( "" ) ) );
+          for ( j = 0; j < partes.length; j++ ) {
+            novaPalavra.push( partes[ j ].letras.join( "" ) );
+          }
+          novaPalavra = novaPalavra.join( "" );
+          // console.log( "novaPalavra:", novaPalavra );
+
+          // trocas.forEach( ( indiceTroca ) => {
+          for ( let m = 0; m < trocas.length; m++ ) {
+            // const tamanhoTroca = partes[ indiceTroca ].letras.length;
+            const tamanhoTroca = partes[ trocas[ m ] ].letras.length;
+            // var replacement;
+            // var trocaIsVogal = partes[ indiceTroca ].isVogal;
+            var trocaIsVogal = partes[ trocas[ m ] ].isVogal;
+            switch ( tamanhoTroca ) {
+              case 1:
+                if ( trocaIsVogal ) {
+                  replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
+                }
+                else {
+                  replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
+                }
+                break;
+              case 2:
+                // if ( indiceTroca === 0 ) {
+                if ( trocas[ m ] === 0 ) {
+                  if ( trocaIsVogal ) {
+                    replacement = vogalVogalI[ Math.floor( Math.random() * vogalVogalI.length ) ];
+                  }
+                  else {
+                    replacement = consConsI[ Math.floor( Math.random() * consConsI.length ) ];
+                  }
+                }
+                else {
+                  if ( trocaIsVogal ) {
+                    replacement = vogalVogal[ Math.floor( Math.random() * vogalVogal.length ) ];
+                  }
+                  else {
+                    replacement = consCons[ Math.floor( Math.random() * consCons.length ) ];
+                  }
+                }
+                break;
+              case 3:
+                break;
+              case 4:
+                break;
+              default:
+            }
+            // novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ indiceTroca ].indiceInicio, replacement );
+            novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ trocas[ m ] ].indiceInicio, replacement );
+          }
+          // );
+
+          // console.log( partes );
+          // console.log( partes.join( "" ) );
+
+          // var st1 = [];
+          // partes.forEach( ( parte ) => st1.push( parte.join( "" ) ) );
+          // console.log( st1.join( "" ) );
+
+          listaDePseudo.push( novaPalavra );
+
+          console.log( "palavra adicionada a lista", novaPalavra );
+          console.log( "Lista atual:", listaDePseudo );
         }
       }
 
     } );
     this.setState( { listaDePseudoPalavras: listaDePseudo } );
   };
+
+  shuffleArray = ( array ) => {
+    for ( var i = array.length - 1; i > 0; i-- ) {
+      var j = Math.floor( Math.random() * ( i + 1 ) );
+      var temp = array[ i ];
+      array[ i ] = array[ j ];
+      array[ j ] = temp;
+    }
+  }
 
   retornaNovaPalavraModificada = ( palavraOriginal, index, replacement ) => {
     console.log( "palavra original:", palavraOriginal );
@@ -190,7 +342,7 @@ class App extends Component {
 
       //em, ens
       case "paroxitona":
-        break;
+        return palavra;
       case "proparoxitona":
         break;
       default:
