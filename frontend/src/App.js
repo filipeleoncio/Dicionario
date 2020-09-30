@@ -5,7 +5,15 @@ import './App.css';
 import { If } from './components/Index';
 import Palavra from './classes/Palavra';
 
+// import ReactExport from 'react-data-export';
+import ReactExport from 'react-export-excel';
+
+const ExcelFile = ReactExport.ExcelFile;
+const ExcelSheet = ReactExport.ExcelFile.ExcelSheet;
+const ExcelColumn = ReactExport.ExcelFile.ExcelColumn;
+
 const consoantes = [ 'b', 'c', 'd', 'f', 'g', 'j', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v' ];
+const ignorar = [ 'h', 'k', 'w', 'x', 'y', 'z' ];
 
 const vogais = [ 'a', 'e', 'i', 'o', 'u' ];
 const vogaisAcentuadas = [ 'á', 'é', 'í', 'ó', 'ú' ];
@@ -21,10 +29,10 @@ const consCons = [
   'nd', 'nc', 'ng', 'ngu', 'nqu'
 ]
 
-const consConsI = [ 'br', 'cr', 'dr', 'fr', 'gr', 'pr', 'tr',
-  'bl', 'cl', 'fl', 'gl', 'pl', 'tl',
-  'ch',
-  'ps', 'pn', 'gn'
+const consConsI = [ 'Br', 'Cr', 'Dr', 'Fr', 'Gr', 'Pr', 'Tr',
+  'Bl', 'Cl', 'Fl', 'Gl', 'Pl', 'Tl',
+  'Ch',
+  'Ps', 'Pn', 'Gn'
 ]
 
 const vogalVogal = [ 'ae', "ai", "ao", "au",
@@ -34,7 +42,12 @@ const vogalVogal = [ 'ae', "ai", "ao", "au",
   'ua', 'ue', 'ui', 'uo'
 ];
 
-const vogalVogalI = [];
+const vogalVogalI = [ 'ae', "ai", "ao", "au",
+  'ea', 'ei', 'eo', 'eu',
+  'ia', 'ie', 'io', 'iu',
+  'oa', 'oe', 'oi', 'ou',
+  'ua', 'ue', 'ui', 'uo'
+];
 
 
 const opcoes = [
@@ -137,8 +150,13 @@ class App extends Component {
 
   gerarPseudoPalavras = async () => {
     let listaDePseudo = [];
-    this.state.listaPessoal.map( ( word ) => console.log( word.nome, word.isCanonica ) );
+    // this.state.listaPessoal.map( ( word ) => console.log( word.nome, word.isCanonica ) );
     var i;
+    var entradaListaDePseudo = {
+      nomePalavra: null,
+      tonicidade: null,
+      canonica: Boolean
+    };
     this.state.listaPessoal.forEach( ( word ) => {
       if ( word.isCanonica ) {
         for ( i = 0; i < 4; i++ ) {
@@ -154,8 +172,14 @@ class App extends Component {
 
           var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
 
-          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade );
-          listaDePseudo.push( novaPalavra );
+          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica );
+          entradaListaDePseudo = {
+            nomePalavra: novaPalavra,
+            tonicidade: word.tonicidade,
+            canonica: word.isCanonica
+          }
+          // listaDePseudo.push( novaPalavra );
+          listaDePseudo.push( entradaListaDePseudo );
 
           console.log( "palavra adicionada a lista", novaPalavra );
           console.log( "Lista atual:", listaDePseudo );
@@ -169,7 +193,7 @@ class App extends Component {
           isVogal: Boolean,
           indiceInicio: null
         };
-        var nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" );
+        var nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" ); //guardar posiçao acento
         console.log( "com acentos:", word.nome );
         console.log( "sem acentos:", nomeSemAcentos );
         var isVogal;
@@ -241,7 +265,8 @@ class App extends Component {
             novaPalavra.push( partes[ j ].letras.join( "" ) );
           }
           novaPalavra = novaPalavra.join( "" );
-          // console.log( "novaPalavra:", novaPalavra );
+          console.log( "novaPalavra:", novaPalavra );
+          console.log( "trocas:", trocas );
 
           // trocas.forEach( ( indiceTroca ) => {
           for ( let m = 0; m < trocas.length; m++ ) {
@@ -257,6 +282,9 @@ class App extends Component {
                 }
                 else {
                   replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
+                }
+                if ( trocas[ m ] === 0 ) {
+                  replacement = replacement.toUpperCase();
                 }
                 break;
               case 2:
@@ -295,8 +323,14 @@ class App extends Component {
           // var st1 = [];
           // partes.forEach( ( parte ) => st1.push( parte.join( "" ) ) );
           // console.log( st1.join( "" ) );
-
-          listaDePseudo.push( novaPalavra );
+          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica );
+          entradaListaDePseudo = {
+            nomePalavra: novaPalavra,
+            tonicidade: word.tonicidade,
+            canonica: word.isCanonica
+          };
+          listaDePseudo.push( entradaListaDePseudo );
+          // listaDePseudo.push( novaPalavra );
 
           console.log( "palavra adicionada a lista", novaPalavra );
           console.log( "Lista atual:", listaDePseudo );
@@ -328,23 +362,46 @@ class App extends Component {
     // return palavraOriginal.substr( 0, index ) + replacement + index < palavraOriginal.length - replacement ? palavraOriginal.substr( index + replacement.length ) : null;
   };
 
-  verificaAcentuacao = ( palavra, tonicidade ) => {
+  verificaAcentuacao = ( palavra, tonicidade, isCanonica ) => {
     switch ( tonicidade ) {
       case "oxitona":
-        if ( palavra.charAt( palavra.length - 1 ) === 'a' || palavra.charAt( palavra.length - 1 ) === 'e' || palavra.charAt( palavra.length - 1 ) === 'o' ) {
-          console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
-          const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 1 ) );
-          return this.retornaNovaPalavraModificada( palavra, palavra.length - 1, vogaisAcentuadas[ idVogalAcentuada ] );
+        if ( isCanonica ) {
+          if ( palavra.charAt( palavra.length - 1 ) === 'a' || palavra.charAt( palavra.length - 1 ) === 'e' || palavra.charAt( palavra.length - 1 ) === 'o' ) {
+            console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
+            const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 1 ) );
+            return this.retornaNovaPalavraModificada( palavra, palavra.length - 1, vogaisAcentuadas[ idVogalAcentuada ] );
+          }
+          else {
+            return palavra;
+          }
         }
         else {
+          if ( palavra.length > 3 && ( palavra.charAt( palavra.length - 2 ) === 'e' && palavra.charAt( palavra.length - 1 ) === 'm' ) ) {
+            console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
+            const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 2 ) );
+            return this.retornaNovaPalavraModificada( palavra, palavra.length - 2, vogaisAcentuadas[ idVogalAcentuada ] );
+          }
+          else {
+            return palavra;
+          }
+        }
+      case "paroxitona":
+        if ( isCanonica )
+          return palavra;
+        else {
+          return palavra; //incompleto
+        }
+      case "proparoxitona":
+        if ( isCanonica ) {
+          console.log( "verificando acento ", palavra, "id:", palavra.charAt( palavra.length - 5 ) );
+          const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 5 ) );
+          if ( idVogalAcentuada >= 0 )
+            return this.retornaNovaPalavraModificada( palavra, palavra.length - 5, vogaisAcentuadas[ idVogalAcentuada ] );
           return palavra;
         }
-
-      //em, ens
-      case "paroxitona":
-        return palavra;
-      case "proparoxitona":
-        break;
+        else {
+          return palavra; //incompleto
+        }
       default:
     }
   };
@@ -437,11 +494,19 @@ class App extends Component {
             </If>
             <If condition={ listaDePseudoPalavras[ 0 ] }>
               <Header as='h2'>Lista de Pseudo Palavras: </Header>
-              { listaDePseudoPalavras.map( ( nomePalavra, index ) => (
+              { listaDePseudoPalavras.map( ( entrada, index ) => (
                 <Header as='h4' key={ index }>
-                  { nomePalavra }
+                  { entrada.nomePalavra }
                 </Header>
               ) ) }
+              <ExcelFile filename="Pseudo-palavras" element={ <Button>Download de PseudoPalavras</Button> }>
+                <ExcelSheet data={ listaDePseudoPalavras } name="Pseudo-palavras">
+                  <ExcelColumn label="Palavras" value="nomePalavra" />
+                  <ExcelColumn label="Tonicidade" value="tonicidade" />
+                  <ExcelColumn label="Canonica"
+                    value={ ( col ) => col.canonica ? "Sim" : "Não" } />
+                </ExcelSheet>
+              </ExcelFile>
             </If>
 
           </Grid.Column>
