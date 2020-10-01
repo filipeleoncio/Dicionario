@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-import { Button, Form, Grid, Header, List, Radio, Segment, Select } from 'semantic-ui-react';
+import { Button, Form, Grid, Header, Radio, Select } from 'semantic-ui-react';
 import './App.css';
 import { If } from './components/Index';
 import Palavra from './classes/Palavra';
@@ -13,7 +13,9 @@ const ExcelSheet = ReactExport.ExcelFile.ExcelSheet;
 const ExcelColumn = ReactExport.ExcelFile.ExcelColumn;
 
 const consoantes = [ 'b', 'c', 'd', 'f', 'g', 'j', 'l', 'm', 'n', 'p', 'r', 's', 't', 'v' ];
-const ignorar = [ 'h', 'k', 'w', 'x', 'y', 'z' ];
+// const ignorar = [ 'h', 'k', 'w', 'x', 'y', 'z', 'ç' ];
+
+const acentoParoxitonasConsoantes = [ 'l', 'n', 'r', 'x', 's' ];
 
 const vogais = [ 'a', 'e', 'i', 'o', 'u' ];
 const vogaisAcentuadas = [ 'á', 'é', 'í', 'ó', 'ú' ];
@@ -26,7 +28,8 @@ const consCons = [
   'st', 'rt', 'nt', 'lt',                                                 //termina com t
   'sm', 'lm',                                                             //termina com m
   'pn', 'ps', 'dv', 'ft', 'gn', 'bj',                                     //outros
-  'nd', 'nc', 'ng', 'ngu', 'nqu'
+  'nd', 'nc', 'ng',
+  // 'ngu', 'nqu'
 ]
 
 const consConsI = [ 'Br', 'Cr', 'Dr', 'Fr', 'Gr', 'Pr', 'Tr',
@@ -42,13 +45,12 @@ const vogalVogal = [ 'ae', "ai", "ao", "au",
   'ua', 'ue', 'ui', 'uo'
 ];
 
-const vogalVogalI = [ 'ae', "ai", "ao", "au",
-  'ea', 'ei', 'eo', 'eu',
-  'ia', 'ie', 'io', 'iu',
-  'oa', 'oe', 'oi', 'ou',
-  'ua', 'ue', 'ui', 'uo'
+const vogalVogalI = [ 'Ae', 'Ai', 'Ao', 'Au',
+  'Ea', 'Ei', 'Eo', 'Eu',
+  'Ia', 'Ie', 'Io', 'Iu',
+  'Oa', 'Oe', 'Oi', 'Ou',
+  'Ua', 'Ue', 'Ui', 'Uo'
 ];
-
 
 const opcoes = [
   { key: '1', text: 'Oxitona', value: 'oxitona' },
@@ -157,6 +159,7 @@ class App extends Component {
       tonicidade: null,
       canonica: Boolean
     };
+
     this.state.listaPessoal.forEach( ( word ) => {
       if ( word.isCanonica ) {
         for ( i = 0; i < 4; i++ ) {
@@ -172,7 +175,7 @@ class App extends Component {
 
           var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
 
-          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica );
+          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica, null );
           entradaListaDePseudo = {
             nomePalavra: novaPalavra,
             tonicidade: word.tonicidade,
@@ -187,12 +190,20 @@ class App extends Component {
 
       }
       else {
+        let indiceAcento = null;
         let partes = [];
         var parte = {
           letras: [],
           isVogal: Boolean,
           indiceInicio: null
         };
+
+        for ( let t = 1; t < word.nome.length; t++ ) {
+          if ( vogaisAcentuadas.find( ( v ) => v === word.nome.charAt( t ).toLowerCase() ) ) {
+            indiceAcento = t;
+          }
+        }
+
         var nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" ); //guardar posiçao acento
         console.log( "com acentos:", word.nome );
         console.log( "sem acentos:", nomeSemAcentos );
@@ -200,18 +211,22 @@ class App extends Component {
 
         if ( vogais.find( ( v ) => v === nomeSemAcentos.charAt( 0 ).toLowerCase() ) ) {
           isVogal = true;
-          parte.letras.push( nomeSemAcentos.charAt( 0 ) );
-          parte.isVogal = isVogal;
-          parte.indiceInicio = 0;
-          console.log( "primeira letra eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
+          // parte.letras.push( nomeSemAcentos.charAt( 0 ) );
+          // parte.isVogal = isVogal;
+          // parte.indiceInicio = 0;
+          // console.log( "primeira letra eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
         }
         else {
           isVogal = false;
-          parte.letras.push( nomeSemAcentos.charAt( 0 ) );
-          parte.isVogal = isVogal;
-          parte.indiceInicio = 0;
-          console.log( "primeira letra nao eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
+          // parte.letras.push( nomeSemAcentos.charAt( 0 ) );
+          // parte.isVogal = isVogal;
+          // parte.indiceInicio = 0;
+          // console.log( "primeira letra nao eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
         }
+        parte.letras.push( nomeSemAcentos.charAt( 0 ) );
+        parte.isVogal = isVogal;
+        parte.indiceInicio = 0;
+
 
         for ( let t = 1; t < nomeSemAcentos.length; t++ ) {
           var isVogalLocal;
@@ -246,7 +261,25 @@ class App extends Component {
         for ( i = 0; i < 4; i++ ) {
           novaPalavra = [];
           trocas = [];
-          for ( var j = 0; j < partes.length; j++ )
+          let limite;
+          //Se nao tiver acento
+          if ( indiceAcento === null ) {
+            //termina em um => nao mexer nas 2 ultimas partes
+            if ( nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'm' && nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'u' ) {
+              limite = partes.length - 2;
+            }
+            //nao mexer na ultima parte
+            else {
+              limite = partes.length - 1;
+            }
+          }
+          ///Se tiver acento, mudar a vontade pois as regras colocarão acento
+          else {
+            limite = partes.length;
+          }
+
+          // for ( var j = 0; j < partes.length; j++ ) ///se tem acento pode mudar a ultima, se nao, nao mexer na ultima nem no acento
+          for ( var j = 0; j < limite; j++ ) ///se tem acento pode mudar a ultima, se nao, nao mexer na ultima nem no acento
             trocas.push( j );
           console.log( partes );
           console.log( trocas );
@@ -323,7 +356,7 @@ class App extends Component {
           // var st1 = [];
           // partes.forEach( ( parte ) => st1.push( parte.join( "" ) ) );
           // console.log( st1.join( "" ) );
-          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica );
+          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica, indiceAcento );
           entradaListaDePseudo = {
             nomePalavra: novaPalavra,
             tonicidade: word.tonicidade,
@@ -362,7 +395,7 @@ class App extends Component {
     // return palavraOriginal.substr( 0, index ) + replacement + index < palavraOriginal.length - replacement ? palavraOriginal.substr( index + replacement.length ) : null;
   };
 
-  verificaAcentuacao = ( palavra, tonicidade, isCanonica ) => {
+  verificaAcentuacao = ( palavra, tonicidade, isCanonica, indiceAcento ) => {
     switch ( tonicidade ) {
       case "oxitona":
         if ( isCanonica ) {
@@ -389,7 +422,21 @@ class App extends Component {
         if ( isCanonica )
           return palavra;
         else {
-          return palavra; //incompleto
+          // let condicao1;
+          if ( indiceAcento ) {
+            if ( acentoParoxitonasConsoantes.find( ( c ) => c === palavra.charAt( palavra.length - 1 ) ) ) {
+              const idVogalAcentuada = vogais.indexOf( palavra.charAt( indiceAcento ) );
+              return this.retornaNovaPalavraModificada( palavra, indiceAcento, vogaisAcentuadas[ idVogalAcentuada ] );
+            }
+            let silabaFinal = palavra.charAt( palavra.length - 2 ) + palavra.charAt( palavra.length - 1 );
+            if ( silabaFinal === 'ei' || silabaFinal === 'um' ) {
+              const idVogalAcentuada = vogais.indexOf( palavra.charAt( indiceAcento ) );
+              return this.retornaNovaPalavraModificada( palavra, indiceAcento, vogaisAcentuadas[ idVogalAcentuada ] );
+            }
+            return palavra;
+          }
+          else
+            return palavra;
         }
       case "proparoxitona":
         if ( isCanonica ) {
@@ -400,7 +447,20 @@ class App extends Component {
           return palavra;
         }
         else {
-          return palavra; //incompleto
+          if ( indiceAcento ) {
+            if ( acentoParoxitonasConsoantes.find( ( c ) => c === palavra.charAt( palavra.length - 1 ) ) ) {
+              const idVogalAcentuada = vogais.indexOf( palavra.charAt( indiceAcento ) );
+              return this.retornaNovaPalavraModificada( palavra, indiceAcento, vogaisAcentuadas[ idVogalAcentuada ] );
+            }
+            let silabaFinal = palavra.charAt( palavra.length - 2 ) + palavra.charAt( palavra.length - 1 );
+            if ( silabaFinal === 'ei' || silabaFinal === 'um' ) {
+              const idVogalAcentuada = vogais.indexOf( palavra.charAt( indiceAcento ) );
+              return this.retornaNovaPalavraModificada( palavra, indiceAcento, vogaisAcentuadas[ idVogalAcentuada ] );
+            }
+            return palavra;
+          }
+          else
+            return palavra;
         }
       default:
     }
