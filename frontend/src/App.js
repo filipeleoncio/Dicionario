@@ -159,21 +159,59 @@ class App extends Component {
       tonicidade: null,
       canonica: Boolean
     };
-
+    var trocas;
+    var novaPalavra;
     this.state.listaPessoal.forEach( ( word ) => {
       if ( word.isCanonica ) {
         for ( i = 0; i < 4; i++ ) {
-          const numSilabas = word.nome.length / 2;
 
-          const silabaTrocada = Math.floor( Math.random() * numSilabas ); //silaba aleatoria
+          // let trocas;
+          novaPalavra = [];
+          trocas = [];
+          for ( let j = 0; j < word.nome.length; j++ )
+            trocas.push( j );
 
-          var replacement;
-          if ( silabaTrocada === 0 )
-            replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ].toUpperCase() + vogais[ Math.floor( Math.random() * vogais.length ) ];
-          else
-            replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ] + vogais[ Math.floor( Math.random() * vogais.length ) ];
+          this.shuffleArray( trocas );
+          console.log( trocas );
 
-          var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
+          trocas.splice( Math.floor( trocas.length ) / 2 );
+          console.log( trocas );
+
+          novaPalavra = word.nome;
+          for ( let m = 0; m < trocas.length; m++ ) {
+            var replacement;
+
+            var trocaIsVogal;
+            if ( trocas[ m ] % 2 === 1 )
+              trocaIsVogal = true;
+            else
+              trocaIsVogal = false;
+            console.log( novaPalavra.charAt( trocas[ m ] ), "é vogal:", trocaIsVogal )
+            if ( trocaIsVogal ) {
+              replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
+            }
+            else {
+              replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
+            }
+            if ( trocas[ m ] === 0 ) {
+              replacement = replacement.toUpperCase();
+            }
+
+            // novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ indiceTroca ].indiceInicio, replacement );
+            novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, trocas[ m ], replacement );
+          }
+
+          // const numSilabas = word.nome.length / 2;
+
+          // const silabaTrocada = Math.floor( Math.random() * numSilabas ); //silaba aleatoria
+
+          // var replacement;
+          // if ( silabaTrocada === 0 )
+          //   replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ].toUpperCase() + vogais[ Math.floor( Math.random() * vogais.length ) ];
+          // else
+          //   replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ] + vogais[ Math.floor( Math.random() * vogais.length ) ];
+
+          // var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
 
           novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica, null );
           entradaListaDePseudo = {
@@ -211,17 +249,9 @@ class App extends Component {
 
         if ( vogais.find( ( v ) => v === nomeSemAcentos.charAt( 0 ).toLowerCase() ) ) {
           isVogal = true;
-          // parte.letras.push( nomeSemAcentos.charAt( 0 ) );
-          // parte.isVogal = isVogal;
-          // parte.indiceInicio = 0;
-          // console.log( "primeira letra eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
         }
         else {
           isVogal = false;
-          // parte.letras.push( nomeSemAcentos.charAt( 0 ) );
-          // parte.isVogal = isVogal;
-          // parte.indiceInicio = 0;
-          // console.log( "primeira letra nao eh vogal:", isVogal, nomeSemAcentos.charAt( 0 ) );
         }
         parte.letras.push( nomeSemAcentos.charAt( 0 ) );
         parte.isVogal = isVogal;
@@ -257,7 +287,7 @@ class App extends Component {
         }
         partes.push( parte );
 
-        var trocas;
+        // let trocas;
         for ( i = 0; i < 4; i++ ) {
           novaPalavra = [];
           trocas = [];
@@ -307,7 +337,7 @@ class App extends Component {
             const tamanhoTroca = partes[ trocas[ m ] ].letras.length;
             // var replacement;
             // var trocaIsVogal = partes[ indiceTroca ].isVogal;
-            var trocaIsVogal = partes[ trocas[ m ] ].isVogal;
+            trocaIsVogal = partes[ trocas[ m ] ].isVogal;
             switch ( tamanhoTroca ) {
               case 1:
                 if ( trocaIsVogal ) {
