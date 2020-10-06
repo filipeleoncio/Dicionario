@@ -38,6 +38,8 @@ const consConsI = [ 'Br', 'Cr', 'Dr', 'Fr', 'Gr', 'Pr', 'Tr',
   'Ps', 'Pn', 'Gn'
 ]
 
+const consConsCons = [ 'rsp', 'rst' ];
+
 const vogalVogal = [ 'ae', "ai", "ao", "au",
   'ea', 'ei', 'eo', 'eu',
   'ia', 'ie', 'io', 'iu',
@@ -93,10 +95,10 @@ class App extends Component {
       // const listaRecebida = await this.buscaLista();
       const listaRecebida = await this.buscaListaPorCaracteristicas( tonicidade, isCanonica );
 
-      console.log( "lista recebida: ", listaRecebida );
+      // console.log( "lista recebida: ", listaRecebida );
       this.setState( { wordList: listaRecebida.data } );
       // this.setState( { isCanonica } );
-      console.log( "lista: ", this.state.wordList );
+      // console.log( "lista: ", this.state.wordList );
     }
     else {
       console.log( "sem informaçoes" );
@@ -141,7 +143,7 @@ class App extends Component {
 
       // this.state.listaPessoal.push( nome );
       this.setState( { listaPessoal: this.lista } );
-      console.log( "lista pessoal: " + this.state.listaPessoal );
+      // console.log( "lista pessoal: " + this.state.listaPessoal );
     }
   };
 
@@ -150,102 +152,166 @@ class App extends Component {
     this.setState( { listaPessoal: this.lista } );
   }
 
+  retornaEntradaCanonicaListaPseudo = ( word, trocas ) => {
+    var trocaIsVogal = Boolean;
+    var replacement;
+    var palavra = word.nome;
+    for ( let m = 0; m < trocas.length; m++ ) {
+
+      if ( trocas[ m ] % 2 === 1 )
+        trocaIsVogal = true;
+      else
+        trocaIsVogal = false;
+
+      // console.log( novaPalavra.charAt( trocas[ m ] ), "é vogal:", trocaIsVogal )
+
+      if ( trocaIsVogal ) {
+        replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
+      }
+      else {
+        replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
+      }
+      if ( trocas[ m ] === 0 ) {
+        replacement = replacement.toUpperCase();
+      }
+
+      palavra = this.retornaNovaPalavraModificada( palavra, trocas[ m ], replacement );
+    }
+
+    palavra = this.verificaAcentuacao( palavra, word.tonicidade, word.isCanonica, null );
+    var entradaListaDePseudo = {
+      nomePalavra: palavra,
+      tonicidade: word.tonicidade,
+      canonica: word.isCanonica
+    }
+    return entradaListaDePseudo;
+  }
+
+  retornaEntradaNaoCanonicaListaPseudo = ( word, trocas, partes, indiceAcento ) => {
+
+    var trocaIsVogal = Boolean;
+    var replacement;
+    var palavra = word.nome;
+    for ( let m = 0; m < trocas.length; m++ ) {
+      const tamanhoTroca = partes[ trocas[ m ] ].letras.length;
+      // var replacement;
+      trocaIsVogal = partes[ trocas[ m ] ].isVogal;
+      switch ( tamanhoTroca ) {
+        case 1:
+          if ( trocaIsVogal ) {
+            replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
+          }
+          else {
+            replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
+          }
+          if ( trocas[ m ] === 0 ) {
+            replacement = replacement.toUpperCase();
+          }
+          break;
+        case 2:
+          if ( trocas[ m ] === 0 ) {
+            if ( trocaIsVogal ) {
+              replacement = vogalVogalI[ Math.floor( Math.random() * vogalVogalI.length ) ];
+            }
+            else {
+              replacement = consConsI[ Math.floor( Math.random() * consConsI.length ) ];
+            }
+          }
+          else {
+            if ( trocaIsVogal ) {
+              replacement = vogalVogal[ Math.floor( Math.random() * vogalVogal.length ) ];
+            }
+            else {
+              replacement = consCons[ Math.floor( Math.random() * consCons.length ) ];
+            }
+          }
+          break;
+        case 3:
+          replacement = consConsCons[ Math.floor( Math.random() * consConsCons.length ) ];
+          break;
+        case 4:
+          break;
+        default:
+      }
+      palavra = this.retornaNovaPalavraModificada( palavra, partes[ trocas[ m ] ].indiceInicio, replacement );
+    }
+
+    palavra = this.verificaAcentuacao( palavra, word.tonicidade, word.isCanonica, indiceAcento );
+    var entradaListaDePseudo = {
+      nomePalavra: palavra,
+      tonicidade: word.tonicidade,
+      canonica: word.isCanonica
+    };
+    return entradaListaDePseudo;
+  }
+
+  retornaLimiteAlteracoes = ( nomeSemAcentos, indiceAcento, partes ) => {
+    //Se nao tiver acento
+    if ( indiceAcento === null ) {
+      //termina em um => nao mexer nas 2 ultimas partes
+      if ( nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'm' && nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'u' ) {
+        // limite = partes.length - 2;
+        return partes.length - 2;
+      }
+      //nao mexer na ultima parte
+      else {
+        // limite = partes.length - 1;
+        return partes.length - 1;
+
+      }
+    }
+    ///Se tiver acento, mudar a vontade pois as regras colocarão acento
+    else {
+      // limite = partes.length;
+      return partes.length;
+    }
+  }
+
   gerarPseudoPalavras = async () => {
     let listaDePseudo = [];
-    // this.state.listaPessoal.map( ( word ) => console.log( word.nome, word.isCanonica ) );
     var i;
-    var entradaListaDePseudo = {
-      nomePalavra: null,
-      tonicidade: null,
-      canonica: Boolean
-    };
+
+    // var entradaListaDePseudo = {
+    //   nomePalavra: null,
+    //   tonicidade: null,
+    //   canonica: Boolean
+    // };
+
     var trocas;
     var novaPalavra;
+
     this.state.listaPessoal.forEach( ( word ) => {
       if ( word.isCanonica ) {
         for ( i = 0; i < 4; i++ ) {
 
-          // let trocas;
-          novaPalavra = [];
           trocas = [];
           for ( let j = 0; j < word.nome.length; j++ )
             trocas.push( j );
 
           this.shuffleArray( trocas );
-          console.log( trocas );
-
           trocas.splice( Math.floor( trocas.length ) / 2 );
-          console.log( trocas );
 
-          novaPalavra = word.nome;
-          for ( let m = 0; m < trocas.length; m++ ) {
-            var replacement;
-
-            var trocaIsVogal;
-            if ( trocas[ m ] % 2 === 1 )
-              trocaIsVogal = true;
-            else
-              trocaIsVogal = false;
-            console.log( novaPalavra.charAt( trocas[ m ] ), "é vogal:", trocaIsVogal )
-            if ( trocaIsVogal ) {
-              replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
-            }
-            else {
-              replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
-            }
-            if ( trocas[ m ] === 0 ) {
-              replacement = replacement.toUpperCase();
-            }
-
-            // novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ indiceTroca ].indiceInicio, replacement );
-            novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, trocas[ m ], replacement );
-          }
-
-          // const numSilabas = word.nome.length / 2;
-
-          // const silabaTrocada = Math.floor( Math.random() * numSilabas ); //silaba aleatoria
-
-          // var replacement;
-          // if ( silabaTrocada === 0 )
-          //   replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ].toUpperCase() + vogais[ Math.floor( Math.random() * vogais.length ) ];
-          // else
-          //   replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ] + vogais[ Math.floor( Math.random() * vogais.length ) ];
-
-          // var novaPalavra = this.retornaNovaPalavraModificada( word.nome, silabaTrocada * 2, replacement );
-
-          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica, null );
-          entradaListaDePseudo = {
-            nomePalavra: novaPalavra,
-            tonicidade: word.tonicidade,
-            canonica: word.isCanonica
-          }
-          // listaDePseudo.push( novaPalavra );
-          listaDePseudo.push( entradaListaDePseudo );
-
-          console.log( "palavra adicionada a lista", novaPalavra );
-          console.log( "Lista atual:", listaDePseudo );
+          listaDePseudo.push( this.retornaEntradaCanonicaListaPseudo( word, trocas ) );
         }
-
       }
       else {
         let indiceAcento = null;
         let partes = [];
-        var parte = {
+        let parte = {
           letras: [],
           isVogal: Boolean,
           indiceInicio: null
         };
+        let isVogal;
 
+        //Guarda posição do acento, caso exista
         for ( let t = 1; t < word.nome.length; t++ ) {
           if ( vogaisAcentuadas.find( ( v ) => v === word.nome.charAt( t ).toLowerCase() ) ) {
             indiceAcento = t;
           }
         }
 
-        var nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" ); //guardar posiçao acento
-        console.log( "com acentos:", word.nome );
-        console.log( "sem acentos:", nomeSemAcentos );
-        var isVogal;
+        let nomeSemAcentos = word.nome.normalize( 'NFD' ).replace( /[^a-zA-Zs]/g, "" );
 
         if ( vogais.find( ( v ) => v === nomeSemAcentos.charAt( 0 ).toLowerCase() ) ) {
           isVogal = true;
@@ -267,8 +333,6 @@ class App extends Component {
             isVogalLocal = false;
           }
 
-          console.log( "letra ", nomeSemAcentos.charAt( t ), "vogal", isVogalLocal );
-
           if ( isVogal === isVogalLocal ) {
             parte.letras.push( nomeSemAcentos.charAt( t ) ); //Se achar 'Q' seguido de 'U', ou 'G' seguido de 'U', puxar os 2 como se fossem consoantes, pois sao um unico fonema
           }
@@ -287,119 +351,47 @@ class App extends Component {
         }
         partes.push( parte );
 
-        // let trocas;
         for ( i = 0; i < 4; i++ ) {
           novaPalavra = [];
           trocas = [];
           let limite;
-          //Se nao tiver acento
-          if ( indiceAcento === null ) {
-            //termina em um => nao mexer nas 2 ultimas partes
-            if ( nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'm' && nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'u' ) {
-              limite = partes.length - 2;
-            }
-            //nao mexer na ultima parte
-            else {
-              limite = partes.length - 1;
-            }
-          }
-          ///Se tiver acento, mudar a vontade pois as regras colocarão acento
-          else {
-            limite = partes.length;
-          }
 
-          // for ( var j = 0; j < partes.length; j++ ) ///se tem acento pode mudar a ultima, se nao, nao mexer na ultima nem no acento
-          for ( var j = 0; j < limite; j++ ) ///se tem acento pode mudar a ultima, se nao, nao mexer na ultima nem no acento
+
+          limite = this.retornaLimiteAlteracoes( nomeSemAcentos, indiceAcento, partes );
+
+          // //Se nao tiver acento
+          // if ( indiceAcento === null ) {
+          //   //termina em um => nao mexer nas 2 ultimas partes
+          //   if ( nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'm' && nomeSemAcentos.charAt( nomeSemAcentos.length - 1 ) === 'u' ) {
+          //     limite = partes.length - 2;
+          //   }
+          //   //nao mexer na ultima parte
+          //   else {
+          //     limite = partes.length - 1;
+          //   }
+          // }
+          // ///Se tiver acento, mudar a vontade pois as regras colocarão acento
+          // else {
+          //   limite = partes.length;
+          // }
+
+          for ( let j = 0; j < limite; j++ )
             trocas.push( j );
-          console.log( partes );
-          console.log( trocas );
 
           this.shuffleArray( trocas );
-          console.log( trocas );
-
           trocas.splice( Math.floor( trocas.length ) / 2 );
-          // var trocasReduzidas = trocas.slice( 0, Math.floor( trocas.length ) / 2 );
 
-          console.log( trocas );
-
-          // partes.forEach( ( parte ) => novaPalavra.push( parte.letras.join( "" ) ) );
-          // partes.map( ( parte ) => novaPalavra.push( parte.letras.join( "" ) ) );
-          for ( j = 0; j < partes.length; j++ ) {
+          for ( let j = 0; j < partes.length; j++ ) {
             novaPalavra.push( partes[ j ].letras.join( "" ) );
           }
           novaPalavra = novaPalavra.join( "" );
-          console.log( "novaPalavra:", novaPalavra );
-          console.log( "trocas:", trocas );
 
-          // trocas.forEach( ( indiceTroca ) => {
-          for ( let m = 0; m < trocas.length; m++ ) {
-            // const tamanhoTroca = partes[ indiceTroca ].letras.length;
-            const tamanhoTroca = partes[ trocas[ m ] ].letras.length;
-            // var replacement;
-            // var trocaIsVogal = partes[ indiceTroca ].isVogal;
-            trocaIsVogal = partes[ trocas[ m ] ].isVogal;
-            switch ( tamanhoTroca ) {
-              case 1:
-                if ( trocaIsVogal ) {
-                  replacement = vogais[ Math.floor( Math.random() * vogais.length ) ];
-                }
-                else {
-                  replacement = consoantes[ Math.floor( Math.random() * consoantes.length ) ];
-                }
-                if ( trocas[ m ] === 0 ) {
-                  replacement = replacement.toUpperCase();
-                }
-                break;
-              case 2:
-                // if ( indiceTroca === 0 ) {
-                if ( trocas[ m ] === 0 ) {
-                  if ( trocaIsVogal ) {
-                    replacement = vogalVogalI[ Math.floor( Math.random() * vogalVogalI.length ) ];
-                  }
-                  else {
-                    replacement = consConsI[ Math.floor( Math.random() * consConsI.length ) ];
-                  }
-                }
-                else {
-                  if ( trocaIsVogal ) {
-                    replacement = vogalVogal[ Math.floor( Math.random() * vogalVogal.length ) ];
-                  }
-                  else {
-                    replacement = consCons[ Math.floor( Math.random() * consCons.length ) ];
-                  }
-                }
-                break;
-              case 3:
-                break;
-              case 4:
-                break;
-              default:
-            }
-            // novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ indiceTroca ].indiceInicio, replacement );
-            novaPalavra = this.retornaNovaPalavraModificada( novaPalavra, partes[ trocas[ m ] ].indiceInicio, replacement );
-          }
-          // );
+          // console.log( "novaPalavra:", novaPalavra );
+          // console.log( "trocas:", trocas );
 
-          // console.log( partes );
-          // console.log( partes.join( "" ) );
-
-          // var st1 = [];
-          // partes.forEach( ( parte ) => st1.push( parte.join( "" ) ) );
-          // console.log( st1.join( "" ) );
-          novaPalavra = this.verificaAcentuacao( novaPalavra, word.tonicidade, word.isCanonica, indiceAcento );
-          entradaListaDePseudo = {
-            nomePalavra: novaPalavra,
-            tonicidade: word.tonicidade,
-            canonica: word.isCanonica
-          };
-          listaDePseudo.push( entradaListaDePseudo );
-          // listaDePseudo.push( novaPalavra );
-
-          console.log( "palavra adicionada a lista", novaPalavra );
-          console.log( "Lista atual:", listaDePseudo );
+          listaDePseudo.push( this.retornaEntradaNaoCanonicaListaPseudo( word, trocas, partes, indiceAcento ) );
         }
       }
-
     } );
     this.setState( { listaDePseudoPalavras: listaDePseudo } );
   };
@@ -414,15 +406,13 @@ class App extends Component {
   }
 
   retornaNovaPalavraModificada = ( palavraOriginal, index, replacement ) => {
-    console.log( "palavra original:", palavraOriginal );
-    console.log( "index:", index );
-    console.log( "replacement:", replacement );
+    // console.log( "palavra original:", palavraOriginal );
+    // console.log( "index:", index );
+    // console.log( "replacement:", replacement );
     var palavraFinal = palavraOriginal.substr( 0, index ) + replacement;
     if ( index < palavraOriginal.length - replacement.length )
       return palavraFinal + palavraOriginal.substr( index + replacement.length );
     return palavraFinal;
-
-    // return palavraOriginal.substr( 0, index ) + replacement + index < palavraOriginal.length - replacement ? palavraOriginal.substr( index + replacement.length ) : null;
   };
 
   verificaAcentuacao = ( palavra, tonicidade, isCanonica, indiceAcento ) => {
@@ -430,7 +420,7 @@ class App extends Component {
       case "oxitona":
         if ( isCanonica ) {
           if ( palavra.charAt( palavra.length - 1 ) === 'a' || palavra.charAt( palavra.length - 1 ) === 'e' || palavra.charAt( palavra.length - 1 ) === 'o' ) {
-            console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
+            // console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
             const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 1 ) );
             return this.retornaNovaPalavraModificada( palavra, palavra.length - 1, vogaisAcentuadas[ idVogalAcentuada ] );
           }
@@ -440,7 +430,7 @@ class App extends Component {
         }
         else {
           if ( palavra.length > 3 && ( palavra.charAt( palavra.length - 2 ) === 'e' && palavra.charAt( palavra.length - 1 ) === 'm' ) ) {
-            console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
+            // console.log( "terminada em:", palavra.charAt( palavra.length - 1 ) );
             const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 2 ) );
             return this.retornaNovaPalavraModificada( palavra, palavra.length - 2, vogaisAcentuadas[ idVogalAcentuada ] );
           }
@@ -470,7 +460,7 @@ class App extends Component {
         }
       case "proparoxitona":
         if ( isCanonica ) {
-          console.log( "verificando acento ", palavra, "id:", palavra.charAt( palavra.length - 5 ) );
+          // console.log( "verificando acento ", palavra, "id:", palavra.charAt( palavra.length - 5 ) );
           const idVogalAcentuada = vogais.indexOf( palavra.charAt( palavra.length - 5 ) );
           if ( idVogalAcentuada >= 0 )
             return this.retornaNovaPalavraModificada( palavra, palavra.length - 5, vogaisAcentuadas[ idVogalAcentuada ] );
