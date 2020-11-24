@@ -4,3 +4,12 @@ DELETE * FROM PALAVRA [42001-200]
 2020-09-17 00:45:13 jdbc[163]: exception
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "DROP PALAVRA[*]"; expected "TABLE, INDEX, USER, SEQUENCE, CONSTANT, TRIGGER, VIEW, ROLE, ALIAS, SCHEMA, ALL, DOMAIN, TYPE, DATATYPE, AGGREGATE, SYNONYM"; SQL statement:
 DROP PALAVRA [42001-200]
+2020-10-06 16:12:45 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "DROP PALAVRA[*]"; expected "TABLE, INDEX, USER, SEQUENCE, CONSTANT, TRIGGER, VIEW, ROLE, ALIAS, SCHEMA, ALL, DOMAIN, TYPE, DATATYPE, AGGREGATE, SYNONYM"; SQL statement:
+drop PALAVRA [42001-200]
+2020-10-06 16:21:49 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "PALAVRA" not found; SQL statement:
+insert into palavra (canonica, nome, tonicidade, id) values (?, ?, ?, ?) [42102-200]
+2020-10-06 16:22:31 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "PALAVRA" not found; SQL statement:
+insert into palavra (canonica, nome, tonicidade, id) values (?, ?, ?, ?) [42102-200]

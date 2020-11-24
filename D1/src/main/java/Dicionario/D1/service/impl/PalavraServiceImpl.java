@@ -4,6 +4,7 @@ import Dicionario.D1.model.Palavra;
 import Dicionario.D1.repository.PalavraRepository;
 import Dicionario.D1.service.PalavraService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class PalavraServiceImpl implements PalavraService {
 
     @Override
     public List<Palavra> salvarListaPalavras(List<Palavra> palavras){
-        List<Palavra> resultado = new ArrayList<Palavra>();
+        List<Palavra> resultado = new ArrayList<>();
 
         if(palavras == null)
             return resultado;
@@ -41,6 +42,8 @@ public class PalavraServiceImpl implements PalavraService {
         for(Palavra palavra : palavras){
             resultado.add(palavraRepository.save(palavra));
         }
+
+        //return palavraRepository.saveAll(palavras);
         return resultado;
     }
 

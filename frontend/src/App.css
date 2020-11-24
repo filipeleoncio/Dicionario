@@ -40,3 +40,21 @@
 .inputContainer{
   display: flex !important;
 }
+
+.showList{
+  /* max-width: 400px;
+	margin: 0 auto;
+	border: 1px solid #ccc; */
+  display: flex ;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.showItem{
+  flex-basis: 20%;
+}
+
+.showButton{
+  text-align: center;
+  flex-basis: 100%;
+}

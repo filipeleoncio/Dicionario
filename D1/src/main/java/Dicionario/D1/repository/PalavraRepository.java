@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface PalavraRepository extends CrudRepository<Palavra, Integer> {
     List<Palavra> findAll();
-
+    //List<Palavra> saveAll(List<Palavra> palavras);
     List<Palavra> findByTonicidade(String tonicidade);
     List<Palavra> findByCanonica(boolean canonica);
     List<Palavra> findByTonicidadeAndCanonica(String tonicidade, boolean canonica);

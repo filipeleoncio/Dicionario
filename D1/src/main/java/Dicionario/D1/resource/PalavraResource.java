@@ -32,13 +32,6 @@ public class PalavraResource {
         return palavraService.buscarPorCanonica(canonica);
     }
 
-    /*
-    @GetMapping("/buscarPorCaracteristicas/{tonicidade}/{canonica}")
-    public List<Palavra> buscarPorCaracteristicas(@PathVariable String tonicidade, @PathVariable boolean canonica){
-        return palavraService.buscarPorCaracteristicas(tonicidade, canonica);
-    }
-    */
-
     @GetMapping("/buscarPorCaracteristicas")
     public List<Palavra> buscarPorCaracteristicas(@RequestParam String tonicidade, @RequestParam boolean canonica){
         return palavraService.buscarPorCaracteristicas(tonicidade, canonica);
@@ -67,7 +60,6 @@ public class PalavraResource {
     @DeleteMapping("/todos")
     public void limparBanco(){
         palavraService.limparBanco();
+
     }
-
-
 }
